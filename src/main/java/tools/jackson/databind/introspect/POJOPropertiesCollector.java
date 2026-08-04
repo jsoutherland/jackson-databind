@@ -1100,6 +1100,10 @@ ctor.creator()));
             if (_annotationIntrospector.findInjectableValue(_config, ctor.param(0)) != null) {
                 // props-based, continue
             } else {
+                Class<?> rawParamType = ctor.creator().getRawParameterType(0);
+                if (rawParamType.isRecord()) {
+                    return true;
+                }
                 // may have explicit preference
                 final ConstructorDetector ctorDetector = _config.getConstructorDetector();
                 if (ctorDetector.singleArgCreatorDefaultsToDelegating()) {

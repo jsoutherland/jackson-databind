@@ -155,6 +155,24 @@ public class ConstructorDetectorTest extends DatabindTestUtil
         }
     }
 
+    record TripleRecord(int a, int b, int c) { }
+
+    static class RecordArgAndDefaultCtorPojo {
+        public int a, b, c;
+        public String ctor;
+
+        public RecordArgAndDefaultCtorPojo() {
+            ctor = "default";
+        }
+
+        public RecordArgAndDefaultCtorPojo(TripleRecord triple) {
+            a = triple.a();
+            b = triple.b();
+            c = triple.c();
+            ctor = "record";
+        }
+    }
+
     private final ObjectMapper MAPPER_PROPS = mapperFor(ConstructorDetector.USE_PROPERTIES_BASED);
     private final ObjectMapper MAPPER_DELEGATING = mapperFor(ConstructorDetector.USE_DELEGATING);
     private final ObjectMapper MAPPER_DEFAULT = mapperFor(ConstructorDetector.DEFAULT);
@@ -415,6 +433,30 @@ public class ConstructorDetectorTest extends DatabindTestUtil
     @Test
     public void testDeserialization4860Explicit() throws Exception {
         _test4680With(MAPPER_EXPLICIT);
+    }
+
+    @Test
+    public void testSingleRecordArgDefaultsToPropertiesBasedWhenObjectMatchesRecord() throws Exception
+    {
+        RecordArgAndDefaultCtorPojo result = MAPPER_DEFAULT.readValue(
+                a2q("{'a':1,'b':2,'c':3}"),
+                RecordArgAndDefaultCtorPojo.class);
+        assertEquals("record", result.ctor);
+        assertEquals(1, result.a);
+        assertEquals(2, result.b);
+        assertEquals(3, result.c);
+    }
+
+    @Test
+    public void testSingleRecordArgStillFallsBackToDefaultCtor() throws Exception
+    {
+        RecordArgAndDefaultCtorPojo result = MAPPER_DEFAULT.readValue(
+                a2q("{'a':1,'b':2,'c':3,'ctor':'manual'}"),
+                RecordArgAndDefaultCtorPojo.class);
+        assertEquals("manual", result.ctor);
+        assertEquals(1, result.a);
+        assertEquals(2, result.b);
+        assertEquals(3, result.c);
     }
 
     private void _test4680With(ObjectMapper mapper) throws Exception
